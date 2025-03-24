@@ -1,69 +1,106 @@
-# Welcome to your Lovable project
+# TransLink Bus Tracker
 
-## Project info
+## Project Overview
 
-**URL**: https://lovable.dev/projects/c8b4ba8c-a966-4233-9233-7c89487795b1
+**Live Demo**: [TransLink Bus Tracker](https://translink-tracker.vercel.app/)
 
-## How can I edit this code?
+This project is a real-time bus tracking application that visualizes Vancouver's TransLink bus service using GTFS (General Transit Feed Specification) data. The application allows users to:
 
-There are several ways of editing your application.
+- Track the current location of buses in real-time
+- View bus route paths and stations
+- Verify headsigns used for different routes
+- Explore route information on an interactive map
 
-**Use Lovable**
+This project was created in part using Lovable AI.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c8b4ba8c-a966-4233-9233-7c89487795b1) and start prompting.
+## Technical Implementation
 
-Changes made via Lovable will be committed automatically to this repo.
+The application is built using modern web technologies and implements the following features:
 
-**Use your preferred IDE**
+- **GTFS Integration**: Utilizes TransLink's GTFS feed to fetch real-time bus location data
+- **Real-time Updates**: Implements periodic polling to update bus locations
+- **Interactive Map**: Uses Leaflet for route visualization
+- **Local Development**: Custom proxy server for API testing
+- **Production Deployment**: Serverless functions on Vercel for API handling
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
+### Technology Stack
 
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (for data storage)
+- Leaflet (for maps)
+- Vercel (for deployment)
 
-## How can I deploy this project?
+### Testing locally using your IDE
 
-Simply open [Lovable](https://lovable.dev/projects/c8b4ba8c-a966-4233-9233-7c89487795b1) and click on Share -> Publish.
+If you want to work locally using your own IDE, follow these steps:
 
-## I want to use a custom domain - is that possible?
+1. **Prerequisites**:
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+   - Node.js & npm - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+2. **Setup**:
+
+```sh
+# Clone the repository
+git clone <YOUR_GIT_URL>
+
+# Navigate to the project directory
+cd <YOUR_PROJECT_NAME>
+
+# Install dependencies
+npm i
+
+# Start the development server
+npm run dev
+```
+
+### Local API Testing
+
+The project includes a proxy server for local API testing. This allows you to:
+
+- Test API endpoints locally
+- Avoid CORS issues during development
+- Simulate production API behavior
+
+#### Activating the Proxy Server
+
+To activate the proxy server locally:
+
+1. Ensure you have the required dependencies installed:
+
+   ```sh
+   npm install
+   ```
+
+2. Create a `.env` file in the project root and add your TransLink API key:
+
+   ```
+   TRANSLINK_API_KEY=<YOUR_API_KEY>
+   ```
+
+3. Start the proxy server:
+
+   ```sh
+   node proxy-server.js
+   ```
+
+4. The proxy server will run at:
+   ```
+   http://localhost:3001
+   ```
+
+### Production API
+
+In production, the application uses Vercel serverless functions to handle API requests, providing:
+
+- Secure API key management
+- Efficient request handling
+- Automatic scaling
+
+## License
+
+This project is open-source and available under the MIT license.
