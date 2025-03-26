@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  const apiUrl = `https://gtfsapi.translink.ca/v3/gtfsposition?apikey=cBTntx4Bv2YYdoY6Msl4`;
+  const apiUrl = `https://gtfsapi.translink.ca/v3/gtfsposition?apikey=${process.env.TRANSLINK_API_KEY}`;
 
   try {
     const response = await fetch(apiUrl, {
