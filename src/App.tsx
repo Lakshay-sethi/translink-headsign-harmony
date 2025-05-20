@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import 'leaflet/dist/leaflet.css';
+import { Analytics } from "@vercel/analytics/react"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +30,7 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    <Analytics />
   </QueryClientProvider>
 );
 
