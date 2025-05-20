@@ -31,7 +31,7 @@ export async function fetchRouteRealtime(routeId: string) {
         currentPosition: entity.vehicle?.position ? {
           lat: entity.vehicle.position.latitude,
           lng: entity.vehicle.position.longitude,
-          timestamp: new Date(entity.vehicle.timestamp * 1000).toISOString(),
+          timestamp: new Date(Number(entity.vehicle.timestamp) * 1000).toISOString(),
           heading: entity.vehicle.position.bearing,
           speed: entity.vehicle.position.speed,
         } : undefined,

@@ -210,7 +210,7 @@ const MapView = (props: MapViewProps) => {
                   <Marker 
                     key={`start-${shape.shape_id}`}
                     position={[firstPoint.lat, firstPoint.lng] as LatLngExpression}
-                    icon={stopIcon}
+                    icon={stopIcon as any}
                   >
                     <Popup>
                       <div className="text-sm py-1">
@@ -239,7 +239,7 @@ const MapView = (props: MapViewProps) => {
                     <Marker
                       key={`mid-${shape.shape_id}-${index}`}
                       position={[point.lat, point.lng] as LatLngExpression}
-                      icon={stopIcon}
+                      icon={stopIcon as any}
                     >
                       <Popup>
                         <div className="text-sm py-1">
@@ -265,7 +265,7 @@ const MapView = (props: MapViewProps) => {
                   <Marker 
                     key={`end-${shape.shape_id}`}
                     position={[lastPoint.lat, lastPoint.lng] as LatLngExpression}
-                    icon={stopIcon}
+                    icon={stopIcon as any}
                   >
                     <Popup>
                       <div className="text-sm py-1">
@@ -294,7 +294,7 @@ const MapView = (props: MapViewProps) => {
               {routeStatus?.currentPosition && (
                 <Marker
                   position={[routeStatus.currentPosition.lat, routeStatus.currentPosition.lng] as LatLngExpression}
-                  icon={busIcon}
+                  icon={busIcon as any}
                 >
                   <Popup>
                     <div className="text-sm py-1">
