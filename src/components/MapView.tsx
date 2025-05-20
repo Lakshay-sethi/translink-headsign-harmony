@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { RouteShape } from '@/lib/types';
 import L from 'leaflet';
 import { RouteStatus as RouteStatusType } from "@/hooks/useRouteRealtime";
+import { LatLngExpression, LatLngTuple, LatLngBoundsExpression } from 'leaflet';
 
 // Custom icons
 const busIcon = new L.Icon({
@@ -47,7 +48,7 @@ const BoundsAdjuster = ({ shapes }: { shapes: RouteShape[] }) => {
       const allPoints = shapes.flatMap(shape => shape.points);
       if (allPoints.length > 0) {
         const bounds = L.latLngBounds(allPoints.map(pt => L.latLng(pt.lat, pt.lng)));
-        map.fitBounds(bounds, {
+        map.fitBounds(bounds as LatLngBoundsExpression, {
           padding: [50, 50],
           maxZoom: 15,
           animate: true,
@@ -67,7 +68,7 @@ const MapView = (props: MapViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Default center (Downtown Vancouver)
-  const defaultCenter = useMemo<[number, number]>(() => [49.28273, -123.12074], []);
+  const defaultCenter = useMemo<LatLngTuple>(() => [49.28273, -123.12074], []);
   
   // Generate colors for each shape based on direction_id
   const shapesWithColors = useMemo(() => {
@@ -176,7 +177,7 @@ const MapView = (props: MapViewProps) => {
               {shapesWithColors.map((shape) => (
                 <Polyline
                   key={shape.shape_id}
-                  positions={shape.points.map(point => [point.lat, point.lng])}
+                  positions={shape.points.map(point => [point.lat, point.lng] as LatLngExpression)}
                   pathOptions={{
                     color: shape.color,
                     weight: 5,
@@ -208,10 +209,10 @@ const MapView = (props: MapViewProps) => {
                   // First stop
                   <Marker 
                     key={`start-${shape.shape_id}`}
-                    position={[firstPoint.lat, firstPoint.lng]}
+                    position={[firstPoint.lat, firstPoint.lng] as LatLngExpression}
                     icon={stopIcon}
                   >
-                    <Popup className="stop-popup">
+                    <Popup>
                       <div className="text-sm py-1">
                         <div className="font-semibold border-b pb-1 mb-2">First Stop</div>
                         <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
@@ -237,10 +238,10 @@ const MapView = (props: MapViewProps) => {
                   ...filteredMidPoints.map((point, index) => (
                     <Marker
                       key={`mid-${shape.shape_id}-${index}`}
-                      position={[point.lat, point.lng]}
+                      position={[point.lat, point.lng] as LatLngExpression}
                       icon={stopIcon}
                     >
-                      <Popup className="stop-popup">
+                      <Popup>
                         <div className="text-sm py-1">
                           <div className="font-semibold border-b pb-1 mb-2">Stop #{point.sequence}</div>
                           <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
@@ -263,10 +264,10 @@ const MapView = (props: MapViewProps) => {
                   // Last stop
                   <Marker 
                     key={`end-${shape.shape_id}`}
-                    position={[lastPoint.lat, point.lng]}
+                    position={[lastPoint.lat, lastPoint.lng] as LatLngExpression}
                     icon={stopIcon}
                   >
-                    <Popup className="stop-popup">
+                    <Popup>
                       <div className="text-sm py-1">
                         <div className="font-semibold border-b pb-1 mb-2">Last Stop</div>
                         <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
@@ -292,10 +293,10 @@ const MapView = (props: MapViewProps) => {
               
               {routeStatus?.currentPosition && (
                 <Marker
-                  position={[routeStatus.currentPosition.lat, routeStatus.currentPosition.lng]}
+                  position={[routeStatus.currentPosition.lat, routeStatus.currentPosition.lng] as LatLngExpression}
                   icon={busIcon}
                 >
-                  <Popup className="bus-popup">
+                  <Popup>
                     <div className="text-sm py-1">
                       <div className="font-semibold border-b pb-1 mb-2 flex items-center">
                         <span className="mr-1">Active Bus</span>

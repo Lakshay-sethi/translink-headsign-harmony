@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { RouteStatus as RouteStatusType } from "@/hooks/useRouteRealtime";
@@ -28,8 +29,8 @@ export function RouteStatus({ status, isLoading, className }: RouteStatusProps) 
     <Card className={cn("p-4", className)}>
       <div className="space-y-3">
         <Badge
-          variant={status.isActive ? "success" : "secondary"}
-          className="w-fit"
+          variant={status.isActive ? "default" : "secondary"}
+          className={cn("w-fit", status.isActive ? "bg-green-500 hover:bg-green-600" : "")}
         >
           {status.isActive ? "Active" : "Inactive"}
         </Badge>
