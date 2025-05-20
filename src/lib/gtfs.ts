@@ -1,3 +1,4 @@
+
 import GtfsRealtimeBindings from "gtfs-realtime-bindings";
 // import fetch from "node-fetch";
 
@@ -5,9 +6,6 @@ import { TRANSLINK_API_KEY, GTFS_API_URL } from './config';
 
 export async function fetchRouteRealtime(routeId: string) {
   try {
-    // when using proxy server:
-    // const response = await fetch(`http://localhost:3001/proxy/gtfs`, {
-
     // using serverless function
     const response = await fetch("/api/gtfs", {
       headers: {
@@ -23,8 +21,7 @@ export async function fetchRouteRealtime(routeId: string) {
     const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
       new Uint8Array(buffer)
     );
-    console.log(feed.entity
-      .filter(entity => entity.vehicle?.trip?.routeId === routeId));
+    
     // Filter and transform the feed data for the specific route
     const routeUpdates = feed.entity
       .filter(entity => entity.vehicle?.trip?.routeId === routeId)
@@ -35,6 +32,8 @@ export async function fetchRouteRealtime(routeId: string) {
           lat: entity.vehicle.position.latitude,
           lng: entity.vehicle.position.longitude,
           timestamp: new Date(entity.vehicle.timestamp * 1000).toISOString(),
+          heading: entity.vehicle.position.bearing,
+          speed: entity.vehicle.position.speed,
         } : undefined,
         vehicleId: entity.vehicle?.vehicle?.id,
         vehicleLabel: entity.vehicle?.vehicle?.label,
@@ -42,7 +41,7 @@ export async function fetchRouteRealtime(routeId: string) {
         currentStatus: entity.vehicle?.currentStatus,
         stopId: entity.vehicle?.stopId,
       }));
-    console.log(routeUpdates);
+    
     return routeUpdates[0] || {
       routeId,
       isActive: false,

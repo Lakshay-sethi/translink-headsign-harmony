@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { fetchRouteRealtime } from '@/lib/gtfs';
 import { toast } from 'sonner';
@@ -9,13 +10,19 @@ export interface RouteStatus {
     lat: number;
     lng: number;
     timestamp: string;
+    heading?: number;
+    speed?: number;
   };
+  vehicleId?: string;
+  vehicleLabel?: string;
+  currentStopSequence?: number;
+  currentStatus?: number;
+  stopId?: string;
   nextScheduledTime?: string;
 }
 
 export function useRouteRealtime(routeId: string | null) {
   // No need for subscription as we'll poll the GTFS API
-
   const statusQuery = useQuery({
     queryKey: ['route-status', routeId],
     queryFn: async (): Promise<RouteStatus | null> => {

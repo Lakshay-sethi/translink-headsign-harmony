@@ -1,9 +1,9 @@
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { EyeIcon, EyeOffIcon, MapPinIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, MapPinIcon, SearchIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RouteShape } from '@/lib/types';
 import L from 'leaflet';
@@ -24,10 +24,17 @@ const stopIcon = new L.Icon({
   popupAnchor: [0, -30],
 });
 
+// Direction colors
+const DIRECTION_COLORS = {
+  outbound: '#0761a5', // TransLink blue for outbound (direction_id: 0)
+  inbound: '#e05d44',  // Contrasting red/orange for inbound (direction_id: 1)
+  default: '#4a9ed8',  // Default blue for unknown direction
+};
+
 interface MapViewProps {
   routeShapes: RouteShape[];
   selectedRouteId: string | null;
-  routeStatus: RouteStatusType | null; // Add this line
+  routeStatus: RouteStatusType | null;
   className?: string;
 }
 
@@ -57,24 +64,33 @@ const MapView = (props: MapViewProps) => {
   const { routeShapes, selectedRouteId, className, routeStatus } = props;
   const [showMap, setShowMap] = useState(true);
   const [showAllStops, setShowAllStops] = useState(false);
-
-    
-  // Default center (Downtown Vancouver)
-  const defaultCenter: L.LatLngExpression = [49.28273, -123.12074];
+  const [searchTerm, setSearchTerm] = useState('');
   
-  // Generate colors for each shape
+  // Default center (Downtown Vancouver)
+  const defaultCenter = useMemo<[number, number]>(() => [49.28273, -123.12074], []);
+  
+  // Generate colors for each shape based on direction_id
   const shapesWithColors = useMemo(() => {
-    return routeShapes.map((shape, index) => {
-      // Use TransLink colors
-      const color = index % 2 === 0 ? '#0761a5' : '#4a9ed8';
-      return { ...shape, color };
+    return routeShapes.map((shape) => {
+      const shapeIdParts = shape.shape_id.split('-');
+      const directionId = shapeIdParts.length > 1 ? parseInt(shapeIdParts[1]) : null;
+      
+      let color;
+      if (directionId === 0) {
+        color = DIRECTION_COLORS.outbound;
+      } else if (directionId === 1) {
+        color = DIRECTION_COLORS.inbound;
+      } else {
+        color = DIRECTION_COLORS.default;
+      }
+      
+      return { ...shape, color, directionId };
     });
   }, [routeShapes]);
 
-  const defaultProps = {
-    center: defaultCenter,
-    zoom: 11
-  };
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
 
   if (!selectedRouteId) {
     return (
@@ -115,122 +131,200 @@ const MapView = (props: MapViewProps) => {
         </Button>
       </div>
       
-      {showMap ? (
-        <div className="h-[500px] w-full animate-fade-in">
-          <MapContainer
-            center={defaultCenter}
-            zoom={11}
-            className="h-full w-full"
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            
-            {shapesWithColors.map((shape) => (
-              <Polyline
-                key={shape.shape_id}
-                positions={shape.points.map(point => [point.lat, point.lng] as L.LatLngExpression)}
-                pathOptions={{
-                  color: shape.color,
-                  weight: 5,
-                  opacity: 0.8
-                }}
+      {showMap && (
+        <>
+          <div className="absolute top-3 left-3 z-10 max-w-xs w-full">
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search stops..."
+                className="pl-9 pr-4 py-2 w-full text-sm rounded-md border border-input bg-white/80 backdrop-blur-sm"
+                value={searchTerm}
+                onChange={handleSearchChange}
               />
-            ))}
-            
-            {/* Display stops along the routes */}
-            {shapesWithColors.map((shape) => {
-              if (shape.points.length === 0) return null;
+            </div>
+          </div>
+          <div className="h-[500px] w-full animate-fade-in">
+            <MapContainer
+              center={defaultCenter}
+              zoom={11}
+              className="h-full w-full"
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
               
-              // Always show first and last stops
-              const firstPoint = shape.points[0];
-              const lastPoint = shape.points[shape.points.length - 1];
-              
-              // For intermediate stops, show either all or none based on toggle
-              const midPoints = showAllStops 
-                ? shape.points.filter((_, index) => 
-                    index > 0 && index < shape.points.length - 1 && index % 5 === 0) // Show every 5th point to avoid overcrowding
-                : [];
-                
-              return [
-                // First stop
-                <Marker 
-                  key={`start-${shape.shape_id}`}
-                  position={[firstPoint.lat, firstPoint.lng] as L.LatLngExpression}
-                  icon={stopIcon}
-                >
-                  <Popup>
-                    <div className="text-sm font-medium">
-                      <span className="block text-base text-primary">First Stop</span>
-                      <span className="block mt-1">Route {shape.shape_id.split('-')[0]}</span>
-                      <span className="block text-xs text-muted-foreground">
-                        Location: {firstPoint.lat.toFixed(5)}, {firstPoint.lng.toFixed(5)}
-                      </span>
+              <div className="leaflet-bottom leaflet-left p-4">
+                <div className="leaflet-control bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-md">
+                  <h4 className="font-medium text-sm mb-2">Route Direction</h4>
+                  <div className="flex flex-col gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-2 bg-[#0761a5]"></div>
+                      <span>Outbound</span>
                     </div>
-                  </Popup>
-                </Marker>,
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-2 bg-[#e05d44]"></div>
+                      <span>Inbound</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {shapesWithColors.map((shape) => (
+                <Polyline
+                  key={shape.shape_id}
+                  positions={shape.points.map(point => [point.lat, point.lng])}
+                  pathOptions={{
+                    color: shape.color,
+                    weight: 5,
+                    opacity: 0.8
+                  }}
+                />
+              ))}
+              
+              {shapesWithColors.map((shape) => {
+                if (shape.points.length === 0) return null;
                 
-                // Intermediate stops if toggle is on
-                ...midPoints.map((point, index) => (
-                  <Marker
-                    key={`mid-${shape.shape_id}-${index}`}
-                    position={[point.lat, point.lng] as L.LatLngExpression}
+                // Always show first and last stops
+                const firstPoint = shape.points[0];
+                const lastPoint = shape.points[shape.points.length - 1];
+                
+                // For intermediate stops, show either all or none based on toggle
+                const midPoints = showAllStops 
+                  ? shape.points.filter((_, index) => 
+                      index > 0 && index < shape.points.length - 1 && index % 5 === 0) 
+                  : [];
+                
+                // Filter by search term if available
+                const filteredMidPoints = searchTerm 
+                  ? midPoints.filter(point => 
+                      `Stop ${point.sequence}`.toLowerCase().includes(searchTerm.toLowerCase()))
+                  : midPoints;
+                  
+                return [
+                  // First stop
+                  <Marker 
+                    key={`start-${shape.shape_id}`}
+                    position={[firstPoint.lat, firstPoint.lng]}
                     icon={stopIcon}
                   >
-                    <Popup>
-                      <div className="text-sm font-medium">
-                        <span className="block text-base text-primary">Stop #{index + 1}</span>
-                        <span className="block mt-1">Route {shape.shape_id.split('-')[0]}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          Location: {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
-                        </span>
+                    <Popup className="stop-popup">
+                      <div className="text-sm py-1">
+                        <div className="font-semibold border-b pb-1 mb-2">First Stop</div>
+                        <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
+                          <span className="text-muted-foreground">Route:</span>
+                          <span className="font-medium">{shape.shape_id.split('-')[0]}</span>
+                          
+                          <span className="text-muted-foreground">Direction:</span>
+                          <span className="font-medium">{shape.directionId === 0 ? 'Outbound' : 'Inbound'}</span>
+                          
+                          <span className="text-muted-foreground">Stop ID:</span>
+                          <span>{firstPoint.sequence}</span>
+                          
+                          <span className="text-muted-foreground">Location:</span>
+                          <span className="text-xs">
+                            {firstPoint.lat.toFixed(5)}, {firstPoint.lng.toFixed(5)}
+                          </span>
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>,
+                  
+                  // Intermediate stops if toggle is on
+                  ...filteredMidPoints.map((point, index) => (
+                    <Marker
+                      key={`mid-${shape.shape_id}-${index}`}
+                      position={[point.lat, point.lng]}
+                      icon={stopIcon}
+                    >
+                      <Popup className="stop-popup">
+                        <div className="text-sm py-1">
+                          <div className="font-semibold border-b pb-1 mb-2">Stop #{point.sequence}</div>
+                          <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
+                            <span className="text-muted-foreground">Route:</span>
+                            <span className="font-medium">{shape.shape_id.split('-')[0]}</span>
+                            
+                            <span className="text-muted-foreground">Direction:</span>
+                            <span className="font-medium">{shape.directionId === 0 ? 'Outbound' : 'Inbound'}</span>
+                            
+                            <span className="text-muted-foreground">Location:</span>
+                            <span className="text-xs">
+                              {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
+                            </span>
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )),
+                  
+                  // Last stop
+                  <Marker 
+                    key={`end-${shape.shape_id}`}
+                    position={[lastPoint.lat, point.lng]}
+                    icon={stopIcon}
+                  >
+                    <Popup className="stop-popup">
+                      <div className="text-sm py-1">
+                        <div className="font-semibold border-b pb-1 mb-2">Last Stop</div>
+                        <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
+                          <span className="text-muted-foreground">Route:</span>
+                          <span className="font-medium">{shape.shape_id.split('-')[0]}</span>
+                          
+                          <span className="text-muted-foreground">Direction:</span>
+                          <span className="font-medium">{shape.directionId === 0 ? 'Outbound' : 'Inbound'}</span>
+                          
+                          <span className="text-muted-foreground">Stop ID:</span>
+                          <span>{lastPoint.sequence}</span>
+                          
+                          <span className="text-muted-foreground">Location:</span>
+                          <span className="text-xs">
+                            {lastPoint.lat.toFixed(5)}, {lastPoint.lng.toFixed(5)}
+                          </span>
+                        </div>
                       </div>
                     </Popup>
                   </Marker>
-                )),
-                
-                // Last stop
-                <Marker 
-                  key={`end-${shape.shape_id}`}
-                  position={[lastPoint.lat, lastPoint.lng] as L.LatLngExpression}
-                  icon={stopIcon}
+                ];
+              })}
+              
+              {routeStatus?.currentPosition && (
+                <Marker
+                  position={[routeStatus.currentPosition.lat, routeStatus.currentPosition.lng]}
+                  icon={busIcon}
                 >
-                  <Popup>
-                    <div className="text-sm font-medium">
-                      <span className="block text-base text-primary">Last Stop</span>
-                      <span className="block mt-1">Route {shape.shape_id.split('-')[0]}</span>
-                      <span className="block text-xs text-muted-foreground">
-                        Location: {lastPoint.lat.toFixed(5)}, {lastPoint.lng.toFixed(5)}
-                      </span>
+                  <Popup className="bus-popup">
+                    <div className="text-sm py-1">
+                      <div className="font-semibold border-b pb-1 mb-2 flex items-center">
+                        <span className="mr-1">Active Bus</span>
+                        <div className="ml-auto h-2 w-2 rounded-full bg-green-500"></div>
+                      </div>
+                      <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
+                        <span className="text-muted-foreground">Route:</span>
+                        <span className="font-medium">{selectedRouteId}</span>
+                        
+                        <span className="text-muted-foreground">Updated:</span>
+                        <span>{new Date(routeStatus.currentPosition.timestamp).toLocaleTimeString()}</span>
+                        
+                        <span className="text-muted-foreground">Location:</span>
+                        <span className="text-xs">
+                          {routeStatus.currentPosition.lat.toFixed(5)}, {routeStatus.currentPosition.lng.toFixed(5)}
+                        </span>
+                      </div>
                     </div>
                   </Popup>
                 </Marker>
-              ];
-            })}
-            
-            {routeStatus?.currentPosition && (
-              <Marker
-                position={[routeStatus.currentPosition.lat, routeStatus.currentPosition.lng]}
-                icon={busIcon}
-              >
-                <Popup>
-                  <div className="text-sm font-medium">
-                    <span className="block text-base text-primary">Current Bus Location</span>
-                    <span className="block text-xs text-muted-foreground">
-                      Updated: {new Date(routeStatus.currentPosition.timestamp).toLocaleTimeString()}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">
-                      Location: {routeStatus.currentPosition.lat.toFixed(5)}, {routeStatus.currentPosition.lng.toFixed(5)}
-                    </span>
-                  </div>
-                </Popup>
-              </Marker>
-            )}
-            <BoundsAdjuster shapes={shapesWithColors} />
-          </MapContainer>
-        </div>
-      ) : (
+              )}
+              
+              <BoundsAdjuster shapes={shapesWithColors} />
+            </MapContainer>
+          </div>
+        </>
+      )}
+      
+      {!showMap && (
         <div className="h-[120px] w-full flex items-center justify-center bg-muted/10 animate-fade-in">
           <div className="text-center text-muted-foreground">
             <MapPinIcon className="h-10 w-10 mx-auto mb-2 opacity-20" />
