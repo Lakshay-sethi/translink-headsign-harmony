@@ -1,4 +1,4 @@
-const ALLOWED_USERS = [123456789, 987654321];
+const ALLOWED_USERS = [8595725954];
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
