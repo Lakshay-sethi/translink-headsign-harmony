@@ -26,7 +26,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Missing TELEGRAM_BOT_TOKEN" });
   }
 
-  const update = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+  let update;
+  try {
+    update = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+  } catch {
+    return res.status(400).json({ error: "Invalid JSON body" });
+  }
   const message = update?.message;
   const userId = message?.from?.id;
   const chatId = message?.chat?.id;
